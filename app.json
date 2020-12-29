@@ -1,0 +1,12 @@
+{
+  "name": "hooksxstate",
+  "displayName": "hooksxstate",
+  "expo": {
+    "name": "hooksxstate",
+    "slug": "hooksxstate",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
