@@ -1,14 +1,15 @@
 import {MachineConfig} from "xstate";
 import {
     AuthPasswordErrorStates,
-    FetchStates,
+    AuthEmailStates,
     SignInContext,
     AuthEmailErrorStates,
     SignInEvent,
-    SignInStateSchema
+    SignInStateSchema,
+    AuthPasswordStates
 } from "./types";
 
-const authEmailFetchConfig: FetchStates = {
+const authEmailFetchConfig: AuthEmailStates = {
     id: 'authEmailFetch',
     initial: 'idle',
     states: {
@@ -23,17 +24,20 @@ const authEmailFetchConfig: FetchStates = {
         loading: {
             invoke: {
                 src: 'authEmail',
-                onDone: 'success',
-                onError: {
-                    target: 'idle',
-                    actions: 'setAuthResponse'
-                }
-            }
-        },
-        success: {
-            always: {
-                target: '#authPassword',
-                actions: ['initAuthResponse', 'initErrorMessage']
+                onDone: '#authPassword',
+                onError: [
+                    {
+                        target: ['idle', '#authEmailError.empty'],
+                        cond: 'emptyEmail'
+                    },
+                    {
+                        target: ['idle', '#authEmailError.notFound'],
+                        cond: 'emailNotFound'
+                    },
+                    {
+                        target: ['idle', '#authEmailError.other']
+                    }
+                ]
             }
         }
     }
@@ -44,27 +48,21 @@ const authEmailErrorConfig: AuthEmailErrorStates = {
     initial: 'none',
     states: {
         none: {
-            always: [
-                {target: 'notFound', cond: 'emailNotFound'},
-                {target: 'other', cond: 'authEmailFail'}
-            ]
+            entry: 'initErrorMessage'
+        },
+        empty: {
+            entry: 'setErrorMessageEmptyEmail'
         },
         notFound: {
             entry: 'setErrorMessageEmailNotFound'
         },
         other: {
             entry: 'setErrorMessageAuthEmailFail'
-        }
-    },
-    on: {
-        SUBMIT: {
-            target: '#authEmailError.none',
-            actions: 'initAuthResponse'
-        }
+        },
     }
 };
 
-const authPasswordFetchConfig: FetchStates = {
+const authPasswordFetchConfig: AuthPasswordStates = {
     id: "authPasswordFetch",
     initial: 'idle',
     states: {
@@ -79,7 +77,7 @@ const authPasswordFetchConfig: FetchStates = {
         loading: {
             invoke: {
                 src: 'signIn',
-                onDone: 'success',
+                onDone: '#signInSuccess',
                 onError: [
                     {
                         target: ['idle', '#authPasswordError.empty'],
@@ -87,13 +85,10 @@ const authPasswordFetchConfig: FetchStates = {
                     },
                     {
                         target: ['idle', '#authPasswordError.notMatch'],
-                        cond: 'emailPasswordNotMatch2'
+                        cond: 'emailPasswordNotMatch'
                     }
                 ]
             }
-        },
-        success: {
-            type: 'final'
         }
     }
 };
@@ -103,14 +98,14 @@ const authPasswordErrorConfig: AuthPasswordErrorStates = {
     initial: 'none',
     states: {
         none: {
-            entry: ['initAuthResponse', 'initErrorMessage']
+            entry: 'initErrorMessage'
+        },
+        empty: {
+            entry: 'setErrorMessageEmptyPassword'
         },
         notMatch: {
             entry: 'setErrorMessageEmailPasswordNotMatch'
         },
-        empty: {
-            entry: 'setErrorMessageEmptyPassword'
-        }
     }
 };
 
@@ -120,8 +115,7 @@ const config: MachineConfig<SignInContext, SignInStateSchema, SignInEvent> = {
     context: {
         emailOrPhone: '',
         password: '',
-        errorMessage: '',
-        authResponse: null
+        errorMessage: ''
     },
     states: {
         authEmail: {
@@ -139,13 +133,14 @@ const config: MachineConfig<SignInContext, SignInStateSchema, SignInEvent> = {
                 fetch: authPasswordFetchConfig,
                 error: authPasswordErrorConfig,
             }
+        },
+        success: {
+            id: 'signInSuccess',
+            type: 'final'
         }
     },
     on: {
-        AUTH_EMAIL: {
-            target: 'authEmail',
-            actions: ['initAuthResponse', 'initErrorMessage']
-        }
+        AUTH_EMAIL: 'authEmail'
     }
 }
 

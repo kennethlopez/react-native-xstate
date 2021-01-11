@@ -11,12 +11,6 @@ const implementation: MachineOptions<SignInContext, any> = {
         setPassword: assign({
             password: (_, event: SignInEvent<SubmitEventData>) => event.data.password ? event.data.password : ''
         }),
-        setAuthResponse: assign({
-            authResponse: (_, event: SignInEvent<AuthResponse>) => event.data
-        }),
-        initAuthResponse: assign({
-            authResponse: (_) => null
-        }),
         initErrorMessage: assign({
             errorMessage: (_) => ''
         }),
@@ -38,16 +32,13 @@ const implementation: MachineOptions<SignInContext, any> = {
     },
     services: {
         authEmail: (context) => fakeApi.authEmail(context.emailOrPhone),
-        signIn: (context) => fakeApi.failSignIn(context.emailOrPhone, context.password)
+        signIn: (context) => fakeApi.signIn(context.emailOrPhone, context.password)
     },
     guards: {
-        emailNotFound: (context) => context.authResponse?.status.code === 304,
-        authEmailFail: (context) => context.authResponse != null && !context.authResponse?.status.success,
-        // emptyPassword: (context, event: SignInEvent<SubmitEventData>) =>
-        //     event ? event.data.password?.length == 0 : context.password.length == 0,
+        emptyEmail: (context) => context.emailOrPhone.length == 0,
+        emailNotFound: (_, event: SignInEvent<AuthResponse>) => event.data.status.code === 304,
         emptyPassword: (context) => context.password.length == 0,
-        emailPasswordNotMatch: (context) => context.authResponse?.status.code === 304,
-        emailPasswordNotMatch2: (_, event: SignInEvent<AuthResponse>) => event.data.status.code === 304
+        emailPasswordNotMatch: (_, event: SignInEvent<AuthResponse>) => event.data.status.code === 304
     },
     activities: {},
     delays: {}

@@ -1,24 +1,30 @@
-import {AuthResponse} from "../../api/types";
-
-export type FetchStates = {
+export type AuthEmailStates = {
     id: string,
-    initial: 'idle' | 'loading' | 'success',
+    initial: 'idle' | 'loading',
     states: {
         idle: {},
         loading: {},
-        success: {}
     }
 }
 
 export type AuthEmailErrorStates = {
     id: string,
-    initial: 'none' | 'notFound',
+    initial: 'none' | 'notFound' | 'other' | 'empty',
     states: {
         none: {},
+        empty: {},
         notFound: {},
         other: {},
-    },
-    on: {}
+    }
+}
+
+export type AuthPasswordStates = {
+    id: string,
+    initial: 'idle' | 'loading',
+    states: {
+        idle: {},
+        loading: {},
+    }
 }
 
 export type AuthPasswordErrorStates = {
@@ -26,21 +32,21 @@ export type AuthPasswordErrorStates = {
     initial: 'none' | 'notMatch',
     states: {
         none: {},
+        empty: {},
         notMatch: {},
-        empty: {}
     }
 }
 
 export type AuthEmail = {
     states: {
-        fetch: FetchStates,
+        fetch: AuthEmailStates,
         error: AuthEmailErrorStates
     }
 }
 
 export type AuthPassword = {
     states: {
-        fetch: FetchStates,
+        fetch: AuthPasswordStates,
         error: AuthPasswordErrorStates
     }
 }
@@ -48,7 +54,8 @@ export type AuthPassword = {
 export type SignInStateSchema = {
     states: {
         authEmail: AuthEmail,
-        authPassword: AuthPassword
+        authPassword: AuthPassword,
+        success: {}
     }
 }
 
@@ -66,5 +73,4 @@ export type SignInContext = {
     emailOrPhone: string;
     password: string;
     errorMessage: string;
-    authResponse: AuthResponse | null;
 }
